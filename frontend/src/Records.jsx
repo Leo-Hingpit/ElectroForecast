@@ -1,16 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
 import "./App.css";
 
 // Register Chart.js components
@@ -18,6 +9,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 const Records = () => {
   const [records, setRecords] = useState([]);
+  const [forecast, setForecast] = useState([]); // State for forecast data
   const [month, setMonth] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -29,6 +21,7 @@ const Records = () => {
       const user = JSON.parse(loggedInUser);
       setUser(user);
       fetchRecords(user.uuid);
+      fetchForecast(); // Fetch forecast data
     } else {
       setError("You must be logged in to view your records.");
     }
@@ -46,6 +39,30 @@ const Records = () => {
       }
     } catch (err) {
       setError("An error occurred while fetching records.");
+    }
+  };
+
+  const fetchForecast = async () => {
+    try {
+      console.log("Fetching forecast data...");
+      const response = await fetch("http://localhost:3000/api/forecast", {
+        method: "POST", // Use POST to match the backend
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}), // Send an empty object if no payload is needed
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Forecast data retrieved:", data);
+        setForecast(data); // Set the forecast data
+      } else {
+        console.error("Error fetching forecast:", data.error || "Unknown error");
+        setError(data.error || "Failed to fetch forecast data.");
+      }
+    } catch (err) {
+      console.error("An error occurred while fetching forecast data:", err);
+      setError("An error occurred while fetching forecast data.");
     }
   };
 
@@ -80,48 +97,24 @@ const Records = () => {
   };
 
   const chartData = {
-    labels: records.map((record) => {
-      const date = new Date(record.month);
-      return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-    }), // X-axis: Formatted months (e.g., "Jan 2024")
+    labels: records.map((record) => record.month), // X-axis: Months
     datasets: [
       {
-        label: "Monthly Electrical Bill",
-        data: records.map((record) => record.amount), // Y-axis: Amounts
+        label: "Historical Data",
+        data: records.map((record) => record.amount), // Y-axis: Historical data
         borderColor: "blue",
         backgroundColor: "rgba(0, 123, 255, 0.2)",
-        tension: 0.4, // Smooth the line
         fill: true,
       },
+      {
+        label: "Forecast Data",
+        data: forecast.map((f) => f.y), // Y-axis: Forecast data
+        borderColor: "green",
+        backgroundColor: "rgba(0, 255, 0, 0.2)",
+        borderDash: [5, 5], // Dashed line for forecast
+        fill: false,
+      },
     ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: true,
-        text: "Monthly Electrical Bill Over Time",
-      },
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: "Month",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Amount (in PHP)",
-        },
-        beginAtZero: true,
-      },
-    },
   };
 
   return (
@@ -132,10 +125,10 @@ const Records = () => {
 
       {/* Line Chart */}
       <div style={{ width: "80%", margin: "0 auto" }}>
-        {records.length > 0 ? (
-          <Line data={chartData} options={chartOptions} />
+        {records.length > 0 || forecast.length > 0 ? (
+          <Line data={chartData} />
         ) : (
-          <p>No records found.</p>
+          <p>No records or forecast data found.</p>
         )}
       </div>
 
