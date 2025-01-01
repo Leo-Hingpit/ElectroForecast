@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import "./App.css";
 
 // Register Chart.js components
@@ -71,16 +80,48 @@ const Records = () => {
   };
 
   const chartData = {
-    labels: records.map((record) => record.month), // X-axis: Months
+    labels: records.map((record) => {
+      const date = new Date(record.month);
+      return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }), // X-axis: Formatted months (e.g., "Jan 2024")
     datasets: [
       {
         label: "Monthly Electrical Bill",
         data: records.map((record) => record.amount), // Y-axis: Amounts
         borderColor: "blue",
         backgroundColor: "rgba(0, 123, 255, 0.2)",
+        tension: 0.4, // Smooth the line
         fill: true,
       },
     ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: "Monthly Electrical Bill Over Time",
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "Month",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Amount (in PHP)",
+        },
+        beginAtZero: true,
+      },
+    },
   };
 
   return (
@@ -91,7 +132,11 @@ const Records = () => {
 
       {/* Line Chart */}
       <div style={{ width: "80%", margin: "0 auto" }}>
-        {records.length > 0 ? <Line data={chartData} /> : <p>No records found.</p>}
+        {records.length > 0 ? (
+          <Line data={chartData} options={chartOptions} />
+        ) : (
+          <p>No records found.</p>
+        )}
       </div>
 
       {/* Add Record Form */}
