@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Flask API URL
 const flaskApiUrl = "http://localhost:8080/electricity-forecast";
- // Update the URL if Flask runs on a different host/port
+// Update the URL if Flask runs on a different host/port
 
 /**
  * Fetch records from Supabase and send them to the Flask API for forecasting.
@@ -38,8 +38,11 @@ router.post('/forecast', async (req, res) => {
     const response = await axios.post(flaskApiUrl, formattedData);
     const forecastData = response.data;
 
-    // Return the forecast data to the frontend
-    res.json(forecastData);
+    // Filter only the forecasted data (isHistorical: false)
+    const filteredForecast = forecastData.filter(item => !item.isHistorical);
+
+    // Return only forecasted data to the frontend
+    res.json(filteredForecast);
   } catch (err) {
     console.error("Error during forecasting:", err.message || err);
     res.status(500).json({ error: "An error occurred while fetching the forecast." });

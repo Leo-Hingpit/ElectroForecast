@@ -1,15 +1,24 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import "./App.css";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const Records = () => {
-  const [records, setRecords] = useState([]);
-  const [forecast, setForecast] = useState([]); // State for forecast data
+  const [records, setRecords] = useState([]); // Historical data
+  const [forecast, setForecast] = useState([]); // Forecasted data
   const [month, setMonth] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -96,8 +105,10 @@ const Records = () => {
     }
   };
 
+  const combinedData = [...records, ...forecast];
+
   const chartData = {
-    labels: records.map((record) => record.month), // X-axis: Months
+    labels: combinedData.map((item) => item.ds || item.month), // Use `ds` for forecasted and `month` for historical
     datasets: [
       {
         label: "Historical Data",
@@ -117,16 +128,28 @@ const Records = () => {
     ],
   };
 
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+      title: { display: true, text: "Monthly Electrical Bill Records and Forecast" },
+    },
+    scales: {
+      x: { title: { display: true, text: "Date" } },
+      y: { title: { display: true, text: "Amount" }, beginAtZero: true },
+    },
+  };
+
   return (
     <div>
       <Navbar user={user} />
-      <h2>Monthly Electrical Bill Records</h2>
+      <h2>Monthly Electrical Bill Records and Forecast</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {/* Line Chart */}
       <div style={{ width: "80%", margin: "0 auto" }}>
-        {records.length > 0 || forecast.length > 0 ? (
-          <Line data={chartData} />
+        {combinedData.length > 0 ? (
+          <Line data={chartData} options={chartOptions} />
         ) : (
           <p>No records or forecast data found.</p>
         )}
